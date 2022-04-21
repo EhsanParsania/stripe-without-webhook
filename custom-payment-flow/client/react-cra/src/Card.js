@@ -1,6 +1,6 @@
 import React from 'react';
-import {CardElement, useStripe, useElements} from '@stripe/react-stripe-js';
-import StatusMessages, {useMessages} from './StatusMessages';
+import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import StatusMessages, { useMessages } from './StatusMessages';
 
 const CardForm = () => {
   const stripe = useStripe();
@@ -18,8 +18,11 @@ const CardForm = () => {
       addMessage('Stripe.js has not yet loaded.');
       return;
     }
+    console.log(1111111)
+   
+    console.log(2222)
 
-    const {error: backendError, clientSecret} = await fetch(
+    const { error: backendError, clientSecret } = await fetch(
       '/create-payment-intent',
       {
         method: 'POST',
@@ -27,9 +30,12 @@ const CardForm = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          paymentMethodType: 'card',
-          currency: 'usd',
+          // paymentMethodType: 'card',
+          // currency: 'usd',
+          // card: elements.getElement(CardElement)
+
         }),
+        // paymentMethodId: result.id
       }
     ).then((r) => r.json());
 
@@ -40,30 +46,31 @@ const CardForm = () => {
 
     addMessage('Client secret returned');
 
-    const {error: stripeError, paymentIntent} = await stripe.confirmCardPayment(
-      clientSecret,
-      {
-        payment_method: {
-          card: elements.getElement(CardElement),
-          billing_details: {
-            name: 'Jenny Rosen',
-          },
-        },
-      }
-    );
-
-    if (stripeError) {
-      // Show error to your customer (e.g., insufficient funds)
-      addMessage(stripeError.message);
-      return;
-    }
+    // const {error: stripeError, paymentIntent} = await stripe.confirmCardPayment(
+    //   clientSecret,
+    //   {
+    //     payment_method: {
+    //       card: elements.getElement(CardElement),
+    //       billing_details: {
+    //         name: 'Jenny Rosen',
+    //       },
+    //     },
+    //     return_url:'http://localhost:3000/success',
+    //   }
+    // );
+    // console.log(856565688888888,paymentIntent)
+    // if (stripeError) {
+    //   // Show error to your customer (e.g., insufficient funds)
+    //   addMessage(stripeError.message);
+    //   return;
+    // }
 
     // Show a success message to your customer
     // There's a risk of the customer closing the window before callback
     // execution. Set up a webhook or plugin to listen for the
     // payment_intent.succeeded event that handles any business critical
     // post-payment actions.
-    addMessage(`Payment ${paymentIntent.status}: ${paymentIntent.id}`);
+    // addMessage(`Payment ${paymentIntent.status}: ${paymentIntent.id}`);
   };
 
   return (
