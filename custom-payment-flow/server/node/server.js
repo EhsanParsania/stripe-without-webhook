@@ -1,9 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const {resolve} = require('path');
+const { resolve } = require('path');
 // Replace if using a different env file or config
-const env = require('dotenv').config({path: './.env'});
+const env = require('dotenv').config({ path: './.env' });
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2020-08-27',
@@ -42,8 +42,14 @@ app.get('/config', (req, res) => {
 });
 
 app.post('/create-payment-intent', async (req, res) => {
-  const {paymentMethodType, currency,paymentMethodOptions} = req.body;
+  const { paymentMethodType, currency, paymentMethodOptions, card, type, amount } = req.body;
+  console.log(card)
+  const paymentMethod = await stripe.paymentMethods.create({
+    type: type,
+    card: card
+  });
 
+  const paymentMethodId = paymentMethod.id
   // Each payment method type has support for different currencies. In order to
   // support many payment method types and several currencies, this server
   // endpoint accepts both the payment method type and the currency as
@@ -51,39 +57,55 @@ app.post('/create-payment-intent', async (req, res) => {
   //
   // Some example payment method types include `card`, `ideal`, and `alipay`.
   const params = {
-    payment_method_types: [paymentMethodType],
-    amount: 1999,
-    currency: currency,
+    payment_method_types: [type],
+    amount: amount,
+    currency: 'usd',
+    confirmation_method: 'manual',
+    payment_method: paymentMethodId,
+    confirm: true
   }
 
   // If this is for an ACSS payment, we add payment_method_options to create
   // the Mandate.
-  if(paymentMethodType === 'acss_debit') {
-    params.payment_method_options = {
-      acss_debit: {
-        mandate_options: {
-          payment_schedule: 'sporadic',
-          transaction_type: 'personal',
-        },
-      },
-    }
-  } else if (paymentMethodType === 'konbini') {
-    /**
-     * Default value of the payment_method_options
-     */
-    params.payment_method_options = {
-      konbini: {
-        product_description: 'Tシャツ',
-        expires_after_days: 3,
-      },
-    }
-  } else if (paymentMethodType === 'customer_balance') {
-    params.payment_method_data = {
-      type: 'customer_balance',
-    }
-    params.confirm = true
-    params.customer = req.body.customerId || await stripe.customers.create().then(data => data.id)
-  }
+  // if (paymentMethodType === 'acss_debit') {
+  //   params.payment_method_options = {
+  //     acss_debit: {
+  //       mandate_options: {
+  //         payment_schedule: 'sporadic',
+  //         transaction_type: 'personal',
+  //       },
+  //     },
+  //   }
+  // } else if (paymentMethodType === 'konbini') {
+  //   /**
+  //    * Default value of the payment_method_options
+  //    */
+  //   params.payment_method_options = {
+  //     konbini: {
+  //       product_description: 'Tシャツ',
+  //       expires_after_days: 3,
+  //     },
+  //   }
+  // } else if (paymentMethodType === 'customer_balance') {
+  //   params.payment_method_data = {
+  //     type: 'customer_balance',
+  //   }
+  //   params.confirm = true
+  //   params.customer = req.body.customerId || await stripe.customers.create().then(data => data.id)
+  // }
+  // else if (paymentMethodType === 'card') {
+  //   params.payment_method_data = {
+  //     "type": "card"
+  //   }
+  //   params.confirm = true
+  //   params.customer = req.body.customerId || await stripe.customers.create().then(data => data.id)
+
+  //   params.setup_future_usage = 'off_session'
+  //   params.amount = 1099
+  //   params.currency = 'usd'
+  //   params.payment_method_types = ['card']
+  // }
+
 
   /**
    * If API given this data, we can overwride it
@@ -98,12 +120,21 @@ app.post('/create-payment-intent', async (req, res) => {
   //
   // [0] https://stripe.com/docs/api/payment_intents/create
   try {
-    const paymentIntent = await stripe.paymentIntents.create(params);
+    const paymentIntent = await stripe.paymentIntents.create(
+      params
+    );
+    console.log(paymentIntent, 'paymentIntent')
+
+    // const confirmIntent = await stripe.paymentIntents.confirm(paymentIntent.id);
+    // console.log(confirmIntent, 'confirmIntent')
 
     // Send publishable key and PaymentIntent details to client
     res.send({
       clientSecret: paymentIntent.client_secret,
       nextAction: paymentIntent.next_action,
+      paymentIntent: paymentIntent,
+
+      // confirmIntent: confirmIntent,
     });
   } catch (e) {
     return res.status(400).send({
