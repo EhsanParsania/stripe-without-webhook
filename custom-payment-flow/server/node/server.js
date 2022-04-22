@@ -186,6 +186,13 @@ app.post('/webhook', async (req, res) => {
   res.sendStatus(200);
 });
 
+const getPaymentDetailsObject = async () => {
+  const paymentIntent = await stripe.paymentIntents.retrieve(
+    'pi_3KrKtmBo5fG3bQ1z3iWhnmYq',
+  );
+  console.log(paymentIntent)
+}
+
 app.listen(4242, () =>
   console.log(`Node server listening at http://localhost:4242`)
 );
