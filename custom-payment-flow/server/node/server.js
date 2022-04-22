@@ -42,18 +42,14 @@ app.get('/config', (req, res) => {
 });
 
 app.post('/create-payment-intent', async (req, res) => {
-  const { paymentMethodType, currency, paymentMethodOptions, card } = req.body;
-  const result = await stripe.paymentMethods.create({
-    type: 'card',
-    card: {
-      number: '4242424242424242',
-      exp_month: 4,
-      exp_year: 2023,
-      cvc: '314',
-    },
+  const { paymentMethodType, currency, paymentMethodOptions, card, type, amount } = req.body;
+  console.log(card)
+  const paymentMethod = await stripe.paymentMethods.create({
+    type: type,
+    card: card
   });
-  const paymentMethodId = result.id
-  console.log(paymentMethodId, 99999)
+
+  const paymentMethodId = paymentMethod.id
   // Each payment method type has support for different currencies. In order to
   // support many payment method types and several currencies, this server
   // endpoint accepts both the payment method type and the currency as
@@ -61,44 +57,42 @@ app.post('/create-payment-intent', async (req, res) => {
   //
   // Some example payment method types include `card`, `ideal`, and `alipay`.
   const params = {
-    payment_method_types: ['card'],
-    amount: 1999,
+    payment_method_types: [type],
+    amount: amount,
     currency: 'usd',
-    // confirm: true,
-    // card: '4242424242424242',
     confirmation_method: 'manual',
     payment_method: paymentMethodId,
-    // confirm: true
+    confirm: true
   }
 
   // If this is for an ACSS payment, we add payment_method_options to create
   // the Mandate.
-  if (paymentMethodType === 'acss_debit') {
-    params.payment_method_options = {
-      acss_debit: {
-        mandate_options: {
-          payment_schedule: 'sporadic',
-          transaction_type: 'personal',
-        },
-      },
-    }
-  } else if (paymentMethodType === 'konbini') {
-    /**
-     * Default value of the payment_method_options
-     */
-    params.payment_method_options = {
-      konbini: {
-        product_description: 'Tシャツ',
-        expires_after_days: 3,
-      },
-    }
-  } else if (paymentMethodType === 'customer_balance') {
-    params.payment_method_data = {
-      type: 'customer_balance',
-    }
-    params.confirm = true
-    params.customer = req.body.customerId || await stripe.customers.create().then(data => data.id)
-  }
+  // if (paymentMethodType === 'acss_debit') {
+  //   params.payment_method_options = {
+  //     acss_debit: {
+  //       mandate_options: {
+  //         payment_schedule: 'sporadic',
+  //         transaction_type: 'personal',
+  //       },
+  //     },
+  //   }
+  // } else if (paymentMethodType === 'konbini') {
+  //   /**
+  //    * Default value of the payment_method_options
+  //    */
+  //   params.payment_method_options = {
+  //     konbini: {
+  //       product_description: 'Tシャツ',
+  //       expires_after_days: 3,
+  //     },
+  //   }
+  // } else if (paymentMethodType === 'customer_balance') {
+  //   params.payment_method_data = {
+  //     type: 'customer_balance',
+  //   }
+  //   params.confirm = true
+  //   params.customer = req.body.customerId || await stripe.customers.create().then(data => data.id)
+  // }
   // else if (paymentMethodType === 'card') {
   //   params.payment_method_data = {
   //     "type": "card"
@@ -129,15 +123,18 @@ app.post('/create-payment-intent', async (req, res) => {
     const paymentIntent = await stripe.paymentIntents.create(
       params
     );
-    console.log(paymentIntent)
+    console.log(paymentIntent, 'paymentIntent')
 
-      const confirmIntent = await stripe.paymentIntents.confirm(paymentIntent.id);
-      console.log(confirmIntent)
-      
+    // const confirmIntent = await stripe.paymentIntents.confirm(paymentIntent.id);
+    // console.log(confirmIntent, 'confirmIntent')
+
     // Send publishable key and PaymentIntent details to client
     res.send({
       clientSecret: paymentIntent.client_secret,
       nextAction: paymentIntent.next_action,
+      paymentIntent: paymentIntent,
+
+      // confirmIntent: confirmIntent,
     });
   } catch (e) {
     return res.status(400).send({
