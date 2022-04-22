@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import StatusMessages, { useMessages } from './StatusMessages';
 
@@ -6,6 +6,10 @@ const CardForm = () => {
   const stripe = useStripe();
   const elements = useElements();
   const [messages, addMessage] = useMessages();
+  const [number, setNumber] = React.useState(4242424242424242);
+  const [cvc, setCvc] = React.useState(424);
+  const [expMonth, setExpMonth] = React.useState(4);
+  const [expYear, setExpYear] = React.useState(2023);
 
   const handleSubmit = async (e) => {
     // We don't want to let default form submission happen here,
@@ -18,11 +22,7 @@ const CardForm = () => {
       addMessage('Stripe.js has not yet loaded.');
       return;
     }
-    console.log(1111111)
-   
-    console.log(2222)
-
-    const { error: backendError, clientSecret } = await fetch(
+    const { error: backendError, clientSecret, paymentIntent, confirmIntent } = await fetch(
       '/create-payment-intent',
       {
         method: 'POST',
@@ -30,12 +30,15 @@ const CardForm = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          // paymentMethodType: 'card',
-          // currency: 'usd',
-          // card: elements.getElement(CardElement)
-
+          type: 'card',
+          card: {
+            number: number,
+            exp_month: expMonth,
+            exp_year: expYear,
+            cvc: cvc,
+          },
+          amount: 1099,
         }),
-        // paymentMethodId: result.id
       }
     ).then((r) => r.json());
 
@@ -45,6 +48,7 @@ const CardForm = () => {
     }
 
     addMessage('Client secret returned');
+    addMessage('status : ' + paymentIntent.status)
 
     // const {error: stripeError, paymentIntent} = await stripe.confirmCardPayment(
     //   clientSecret,
@@ -73,6 +77,8 @@ const CardForm = () => {
     // addMessage(`Payment ${paymentIntent.status}: ${paymentIntent.id}`);
   };
 
+
+
   return (
     <>
       <h1>Card</h1>
@@ -91,14 +97,26 @@ const CardForm = () => {
       </p>
 
       <form id="payment-form" onSubmit={handleSubmit}>
-        <label htmlFor="card">Card</label>
-        <CardElement id="card" />
+      <p style={{fontWeight:'bold',fontSize:'24px'}} >Amount : <span style={{color:'green'}}>1099</span></p>
+      <br/>
+        {/* <label htmlFor="card">Card</label> */}
+        {/* <CardElement id="card" /> */}
+
+        <label htmlFor="number">Card number</label>
+        <input defaultValue={number} type='text' id='number' onChange={(e) => setNumber(e.target.value)} />
+        <label htmlFor="expMonth">expMonth</label>
+        <input defaultValue={expMonth} type='text' id='expMonth' onChange={(e) => setExpMonth(e.target.value)} />
+        <label htmlFor="expYear">expYear</label>
+        <input defaultValue={expYear} type='text' id='expYear' onChange={(e) => setExpYear(e.target.value)} />
+        <label htmlFor="cvc">cvc</label>
+        <input defaultValue={cvc} type='text' id='cvc' onChange={(e) => setCvc(e.target.value)} />
 
         <button type="submit">Pay</button>
+
       </form>
       <StatusMessages messages={messages} />
 
-      <p> <a href="https://youtu.be/IhvtIbfDZJI" target="_blank">Watch a demo walkthrough</a> </p>
+      {/* <p> <a href="https://youtu.be/IhvtIbfDZJI" target="_blank">Watch a demo walkthrough</a> </p> */}
     </>
   );
 };
