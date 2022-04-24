@@ -50,7 +50,7 @@ app.post('/create-payment-intent', async (req, res) => {
     email: 'eeeee@gmail.com',
     description: 'ehsan',
   });
-  console.log('customer', 999999999, stripeCustomer)
+  // console.log('customer', 999999999, stripeCustomer)
   // user.save({ 'stripeCustomerId': stripeCustomer.id }, useMaster)
   // }
 
@@ -73,7 +73,7 @@ app.post('/create-payment-intent', async (req, res) => {
     confirmation_method: 'manual',
     payment_method: paymentMethodId,
     confirm: true,
-    customer: 'asdasdasdadads',
+    customer: stripeCustomer.id,
   }
 
   // If this is for an ACSS payment, we add payment_method_options to create
