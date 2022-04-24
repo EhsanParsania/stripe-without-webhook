@@ -44,6 +44,16 @@ app.get('/config', (req, res) => {
 app.post('/create-payment-intent', async (req, res) => {
   const { paymentMethodType, currency, paymentMethodOptions, card, type, amount } = req.body;
   console.log(card)
+
+  // if (!user.get('stripeCustomerId')) {
+  const stripeCustomer = await stripe.customers.create({
+    email: 'eeeee@gmail.com',
+    description: 'ehsan',
+  });
+  console.log('customer', 999999999, stripeCustomer)
+  // user.save({ 'stripeCustomerId': stripeCustomer.id }, useMaster)
+  // }
+
   const paymentMethod = await stripe.paymentMethods.create({
     type: type,
     card: card
@@ -62,7 +72,8 @@ app.post('/create-payment-intent', async (req, res) => {
     currency: 'usd',
     confirmation_method: 'manual',
     payment_method: paymentMethodId,
-    confirm: true
+    confirm: true,
+    customer: 'asdasdasdadads',
   }
 
   // If this is for an ACSS payment, we add payment_method_options to create
@@ -188,10 +199,11 @@ app.post('/webhook', async (req, res) => {
 
 const getPaymentDetailsObject = async () => {
   const paymentIntent = await stripe.paymentIntents.retrieve(
-    'pi_3KrKtmBo5fG3bQ1z3iWhnmYq',
+    'pi_3KrNv6Bo5fG3bQ1z1syhIIdb',
   );
   console.log(paymentIntent)
 }
+
 
 app.listen(4242, () =>
   console.log(`Node server listening at http://localhost:4242`)
